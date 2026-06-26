@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>口腔病例移动端系统</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body {
+      background: #f5f7fa;
+      color: #333;
+      max-width: 750px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    .header {
+      background: #2563eb;
+      color: #fff;
+      padding: 14px 16px;
+      font-size: 18px;
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+      z-index: 99;
+    }
+    .card {
+      background: #fff;
+      margin: 12px;
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-gray {
+      background: #e5e7eb;
+      color: #333;
+    }
+    /* 口内照片预览区 */
+    .img-wrap {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .img-item {
+      background: #eee;
+      height: 110px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #666;
+      overflow: hidden;
+    }
+    .img-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 牙位选择 */
+    .tooth-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      margin:10px 0;
+    }
+    .tooth-item {
+      height: 36px;
+      border:1px solid #ccc;
+      border-radius:4px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .tooth-item.active {
+      background:#2563eb;
+      color:#fff;
+      border-color:#2563eb;
+    }
+    /* 疾病列表 */
+    .disease-item {
+      padding:10px 0;
+      border-bottom:1px solid #eee;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .disease-item:last-child {
+      border-bottom:none;
+    }
+    .mask-layer {
+      position:fixed;
+      left:0;
+      top:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.5);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:999;
+    }
+    .popup {
+      width:86%;
+      max-width:420px;
+      background:#fff;
+      border-radius:10px;
+      padding:18px;
+    }
+    .popup h3 {
+      margin-bottom:14px;
+      font-size:17px;
+    }
+    .form-row {
+      margin:10px 0;
+    }
+    .form-row label {
+      display:block;
+      font-size:14px;
+      margin-bottom:6px;
+    }
+    select {
+      width:100%;
+      height:40px;
+      border:1px solid #ddd;
+      border-radius:6px;
+      padding:0 8px;
+      font-size:14px;
+    }
+    .popup-btns {
+      display:flex;
+      gap:10px;
+      margin-top:16px;
+    }
+    .popup-btns button {
+      flex:1;
+      height:42px;
+    }
+  </style>
+</head>
+<body>
+<div class="header">口腔病例管理系统</div>
+
+<!-- 1.口内照片区域 -->
+<div class="card">
+  <div class="card-title">
+    口内照片预览
+    <button class="btn btn-primary" onclick="alert('上传照片功能')">上传图片</button>
+  </div>
+  <div class="img-wrap">
+    <div class="img-item">上颌正面</div>
+    <div class="img-item">下颌正面</div>
+    <div class="img-item">左侧咬合</div>
+    <div class="img-item">右侧咬合</div>
+    <div class="img-item">正脸咬合</div>
+    <div class="img-item">上颌侧面</div>
+    <div class="img-item">下颌侧面</div>
+    <div class="img-item">全口全景</div>
+  </div>
+</div>
+
+<!-- 2.新增疾病操作区 -->
+<div class="card">
+  <div class="card-title">病例编辑操作</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="openPopup('add')">新增疾病</button>
+    <button class="btn btn-gray" onclick="openPopup('edit')">修改疾病</button>
+    <button class="btn btn-danger" onclick="openPopup('del')">移除疾病</button>
+  </div>
+  <div style="margin-top:12px;">
+    <div style="font-size:14px;margin-bottom:8px;">选择牙位</div>
+    <div class="tooth-grid" id="toothBox"></div>
+  </div>
+</div>
+
+<!-- 3.疾病分类列表 -->
+<div class="card">
+  <div class="card-title">疾病分类统计</div>
+  <div id="diseaseList"></div>
+</div>
+
+<!-- 弹窗 -->
+<div class="mask-layer" id="mask">
+  <div class="popup">
+    <h3 id="popTitle">新增疾病</h3>
+    <div class="form-row">
+      <label>疾病类型</label>
+      <select id="diseaseType">
+        <option value="牙列拥挤">牙列拥挤</option>
+        <option value="中龋">中龋</option>
+        <option value="楔缺">楔缺</option>
+        <option value="牙缺失">牙缺失</option>
+      </select>
+    </div>
+    <div class="popup-btns">
+      <button class="btn btn-gray" onclick="closePopup()">取消</button>
+      <button class="btn btn-primary" onclick="submitOperate()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 全局数据
+let toothList = ['11','12','13','14','15','16','17','18','21','22','23','24','25','26','27','28','31','32','33','34','35','36','37','38','41','42','43','44','45','46','47','48'];
+let selectedTooth = [];
+let operateType = 'add';
+// 病例数据
+let diseaseData = [
+  {type:'牙列拥挤', teeth:['21','22','31','32','41']},
+  {type:'中龋', teeth:['16','21','26']},
+  {type:'楔缺', teeth:['14','15']},
+  {type:'牙缺失', teeth:['12','13','14','36','46','47']}
+];
+
+// 渲染牙位
+function renderTooth(){
+  const box = document.getElementById('toothBox');
+  box.innerHTML = '';
+  toothList.forEach(t=>{
+    let div = document.createElement('div');
+    div.className = 'tooth-item';
+    if(selectedTooth.includes(t)) div.classList.add('active');
+    div.innerText = t;
+    div.onclick = ()=>{
+      if(selectedTooth.includes(t)){
+        selectedTooth = selectedTooth.filter(x=>x!==t);
+      }else{
+        selectedTooth.push(t);
+      }
+      renderTooth();
+    }
+    box.appendChild(div);
+  })
+}
+
+// 渲染疾病列表
+function renderDisease(){
+  const list = document.getElementById('diseaseList');
+  list.innerHTML = '';
+  diseaseData.forEach(item=>{
+    let wrap = document.createElement('div');
+    wrap.className = 'disease-item';
+    wrap.innerHTML = `
+      <div>
+        <div style="font-weight:500">${item.type}（${item.teeth.length}颗）</div>
+        <div style="font-size:13px;color:#666;margin-top:4px">牙位：${item.teeth.join('、')}</div>
+      </div>
+    `;
+    list.appendChild(wrap);
+  })
+}
+
+// 弹窗
+function openPopup(type){
+  operateType = type;
+  const mask = document.getElementById('mask');
+  const title = document.getElementById('popTitle');
+  if(type === 'add') title.innerText = '新增疾病';
+  if(type === 'edit') title.innerText = '修改疾病';
+  if(type === 'del') title.innerText = '移除疾病';
+  mask.style.display = 'flex';
+}
+function closePopup(){
+  document.getElementById('mask').style.display = 'none';
+}
+
+// 提交操作
+function submitOperate(){
+  const typeSel = document.getElementById('diseaseType').value;
+  if(selectedTooth.length === 0){
+    alert('请先选择牙位！');
+    return;
+  }
+  let target = diseaseData.find(d=>d.type === typeSel);
+  if(operateType === 'add'){
+    selectedTooth.forEach(t=>{
+      if(!target.teeth.includes(t)) target.teeth.push(t);
+    })
+  }else if(operateType === 'del'){
+    selectedTooth.forEach(t=>{
+      target.teeth = target.teeth.filter(x=>x!==t);
+    })
+  }
+  selectedTooth = [];
+  renderTooth();
+  renderDisease();
+  closePopup();
+  alert('操作完成，已更新病例数据');
+}
+
+// 初始化
+window.onload = function(){
+  renderTooth();
+  renderDisease();
+}
+</script>
+</body>
+</html>
